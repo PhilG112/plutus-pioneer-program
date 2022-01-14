@@ -1,7 +1,7 @@
+{-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE DeriveAnyClass             #-}
 {-# LANGUAGE DeriveGeneric              #-}
-{-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase                 #-}
@@ -110,6 +110,7 @@ minBid AuctionDatum{..} = case adHighestBid of
     Nothing      -> aMinBid adAuction
     Just Bid{..} -> bBid + 1
 
+-- HEART OF THE ONCHAIN CODE, DEFINE THE SCRIPT VALIDATOR
 {-# INLINABLE mkAuctionValidator #-}
 mkAuctionValidator :: AuctionDatum -> AuctionAction -> ScriptContext -> Bool
 mkAuctionValidator ad redeemer ctx =
@@ -213,6 +214,8 @@ mkAuctionValidator ad redeemer ctx =
       in
         txOutAddress o == pubKeyHashAddress h Nothing
 
+
+-- COMPILATION TO PLUTUS CORE HAPPENS HERE USING TEMPLATE HASKELL
 typedAuctionValidator :: Scripts.TypedValidator Auctioning
 typedAuctionValidator = Scripts.mkTypedValidator @Auctioning
     $$(PlutusTx.compile [|| mkAuctionValidator ||])
@@ -229,6 +232,7 @@ auctionHash = Scripts.validatorHash typedAuctionValidator
 auctionAddress :: Ledger.Address
 auctionAddress = scriptHashAddress auctionHash
 
+-- OFFCHAIN STARTS HERE
 data StartParams = StartParams
     { spDeadline :: !POSIXTime
     , spMinBid   :: !Integer
