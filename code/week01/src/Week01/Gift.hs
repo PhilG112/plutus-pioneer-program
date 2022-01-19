@@ -38,6 +38,7 @@ import qualified Prelude              as P
 import           Schema               (ToSchema)
 import           Text.Printf          (printf)
 import Data.Data
+import Data.Void
 
 {-# OPTIONS_GHC -fno-warn-unused-imports #-}
 
@@ -53,3 +54,39 @@ valHash = Scripts.validatorHash validator
 
 srcAddress :: Ledger.Address
 srcAddress = scriptAddress validator
+
+
+-- Off chain
+type GiftSchema =
+        Endpoint "give" Integer
+    .\/ Endpoint "grab" ()
+
+give :: AsContractError e => Integer -> Contract w s e ()
+give amount = do
+    let tx = mustPayToOtherScript valHash (Datum $ Constr 0 []) $ Ada.lovelaceValueOf amount
+    ledgerTx <- submitTx tx
+    void $ awaitTxConfirmed $ txId ledgerTx
+    logInfo @String $ printf "made a gift of %d lovelace" amount
+
+grab :: forall w s e. AsContractError e => Contract w s e ()
+grab = do
+    utxos <- utxoAt srcAddress
+    let orefs = fst <$> Map.toList utxos
+        lookups = Constraints.unspentOutputs utxos  <>
+                  Constraints.otherScript validator
+    
+        tx :: Constraints.TxConstraints Void Void
+        tx = mconcat [mustSpendScriptOutput oref $ Redeemer $ I 17 | oref <- orefs]
+    
+    ledgerTx <- submitConfirmed $ txId ledgerTx
+    logInfo @String $ "collected gifts"
+
+endpoints :: Contract () GiftSchema Text ()
+endpoints = (give' `select` grab') >> endpoints
+    where
+        give' = endpoint @"give" >>= give
+        grab' = endpoint @"grab" >> grab
+
+mkSchemaDefinitions ''GiftSchema
+
+mkKnownCurrencies []
