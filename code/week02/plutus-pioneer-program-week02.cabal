@@ -14,7 +14,7 @@ library
                      , Week02.FortyTwo
                      , Week02.Homework1
                      , Week02.Homework2
-                     , Week02.Gift
+                    --  , Week02.Gift
                      , Week02.IsData
                      , Week02.Typed
   build-depends:       aeson

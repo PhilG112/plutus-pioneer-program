@@ -30,9 +30,9 @@ import           Playground.Types     (KnownCurrency (..))
 import           Prelude              (IO, Semigroup (..), String)
 import           Text.Printf          (printf)
 
-newtype MySillyRedeemer = MySillyRedeemer Integer
+newtype MySillyRedeemer = MySillyRedeemer Integer -- Create your own custom datatype for the redeemer
 
-PlutusTx.unstableMakeIsData ''MySillyRedeemer
+PlutusTx.unstableMakeIsData ''MySillyRedeemer -- This is so you don't have to automatically create instances of toData/fromdata for your custom types. This is template haskell, at compile time it will write an instance of your type for you and splice it in this position. There is a stable version of unstableMakeIsData which should be used in production. See the haddock documentation for more info.
 
 {-# INLINABLE mkValidator #-}
 mkValidator :: () -> MySillyRedeemer -> ScriptContext -> Bool
@@ -41,14 +41,14 @@ mkValidator _ (MySillyRedeemer r) _ = traceIfFalse "wrong redeemer" $ r == 42
 data Typed
 instance Scripts.ValidatorTypes Typed where
     type instance DatumType Typed = ()
-    type instance RedeemerType Typed = MySillyRedeemer
+    type instance RedeemerType Typed = MySillyRedeemer -- Change the redeemer instance here with your own type
 
 typedValidator :: Scripts.TypedValidator Typed
 typedValidator = Scripts.mkTypedValidator @Typed
     $$(PlutusTx.compile [|| mkValidator ||])
     $$(PlutusTx.compile [|| wrap ||])
   where
-    wrap = Scripts.wrapValidator @() @MySillyRedeemer
+    wrap = Scripts.wrapValidator @() @MySillyRedeemer -- You also need to pass your custom type here so that BuiltinData knows about it
 
 validator :: Validator
 validator = Scripts.validatorScript typedValidator
@@ -77,7 +77,7 @@ grab r = do
         lookups = Constraints.unspentOutputs utxos      <>
                   Constraints.otherScript validator
         tx :: TxConstraints Void Void
-        tx      = mconcat [mustSpendScriptOutput oref $ Redeemer $ PlutusTx.toBuiltinData (MySillyRedeemer r) | oref <- orefs]
+        tx      = mconcat [mustSpendScriptOutput oref $ Redeemer $ PlutusTx.toBuiltinData (MySillyRedeemer r) | oref <- orefs] -- Specify your custom redeemer in this list comphrension
     ledgerTx <- submitTxConstraintsWith @Void lookups tx
     void $ awaitTxConfirmed $ getCardanoTxId ledgerTx
     logInfo @String $ "collected gifts"

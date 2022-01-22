@@ -32,20 +32,21 @@ import           Prelude              (IO, Semigroup (..), String)
 import           Text.Printf          (printf)
 
 {-# INLINABLE mkValidator #-}
+--             Datum          Redeemer       Context
 mkValidator :: () -> Integer -> ScriptContext -> Bool
 mkValidator _ r _ = traceIfFalse "wrong redeemer" $ r == 42
 
-data Typed
-instance Scripts.ValidatorTypes Typed where
-    type instance DatumType Typed = ()
-    type instance RedeemerType Typed = Integer
+data Typed -- New data type with any name
+instance Scripts.ValidatorTypes Typed where -- Need to create an instance for the class validator types
+    type instance DatumType Typed = () -- These will correspond to the parameters in mkValiator, here we use () as we define the Datum as () in the mkValidator
+    type instance RedeemerType Typed = Integer -- Same thing here.
 
 typedValidator :: Scripts.TypedValidator Typed
 typedValidator = Scripts.mkTypedValidator @Typed
     $$(PlutusTx.compile [|| mkValidator ||])
     $$(PlutusTx.compile [|| wrap ||])
   where
-    wrap = Scripts.wrapValidator @() @Integer
+    wrap = Scripts.wrapValidator @() @Integer -- Need to wrap the values because there needs to be a translation from the general types () and Integer to BuiltinData - this is done with the Scripts.wrapValidator function which takes the types of the parameters of mkValidator. This is a back and forth between builtindata and our typed definitions.
 
 validator :: Validator
 validator = Scripts.validatorScript typedValidator
@@ -53,8 +54,8 @@ validator = Scripts.validatorScript typedValidator
 valHash :: Ledger.ValidatorHash
 valHash = Scripts.validatorHash typedValidator
 
-scrAddress :: Ledger.Address
-scrAddress = scriptAddress validator
+srcAddress :: Ledger.Address
+srcAddress = scriptAddress validator
 
 type GiftSchema =
             Endpoint "give" Integer
@@ -69,7 +70,7 @@ give amount = do
 
 grab :: forall w s e. AsContractError e => Integer -> Contract w s e ()
 grab r = do
-    utxos <- utxosAt scrAddress
+    utxos <- utxosAt srcAddress
     let orefs   = fst <$> Map.toList utxos
         lookups = Constraints.unspentOutputs utxos      <>
                   Constraints.otherScript validator
