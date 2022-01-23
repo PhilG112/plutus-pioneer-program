@@ -61,7 +61,7 @@ scrAddress = scriptAddress validator
 
 type GiftSchema =
             Endpoint "give" Integer
-        .\/ Endpoint "grab" Integer
+        .\/ Endpoint "grab" Integer q   
 
 give :: AsContractError e => Integer -> Contract w s e ()
 give amount = do
