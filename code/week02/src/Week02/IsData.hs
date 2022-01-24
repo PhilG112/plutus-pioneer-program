@@ -39,7 +39,7 @@ mkValidator :: () -> MySillyRedeemer -> ScriptContext -> Bool
 mkValidator _ (MySillyRedeemer r) _ = traceIfFalse "wrong redeemer" $ r == 42
 
 data Typed
-instance Scripts.ValidatorTypes Typed where
+instance Scripts.ValidatorTypes Typed where 
     type instance DatumType Typed = ()
     type instance RedeemerType Typed = MySillyRedeemer -- Change the redeemer instance here with your own type
 
@@ -61,7 +61,7 @@ scrAddress = scriptAddress validator
 
 type GiftSchema =
             Endpoint "give" Integer
-        .\/ Endpoint "grab" Integer q   
+        .\/ Endpoint "grab" Integer   
 
 give :: AsContractError e => Integer -> Contract w s e ()
 give amount = do
