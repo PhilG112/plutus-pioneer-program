@@ -9,7 +9,7 @@ module Week03.Deploy
     ) where
 
 import           Cardano.Api
-import           Cardano.Api.Shelley   (PlutusScript (..))
+import           Cardano.Api.Shelley   (PlutusScript (..), scriptDataToJson)
 import           Codec.Serialise       (serialise)
 import           Data.Aeson            (encode)
 import qualified Data.ByteString.Lazy  as LBS

@@ -51,9 +51,11 @@ mkValidator dat () ctx = traceIfFalse "beneficiary's signature missing" signedBy
     info = scriptContextTxInfo ctx
 
     signedByBeneficiary :: Bool
+    -- txSignedBy :: TxInfo -> PaymentPubKeyHash -> Bool
     signedByBeneficiary = txSignedBy info $ unPaymentPubKeyHash $ beneficiary dat
 
     deadlineReached :: Bool
+    -- Saying does the range from the deadline onwards contain the POSIXTime of the script context, if so then deadline has been reached
     deadlineReached = contains (from $ deadline dat) $ txInfoValidRange info
 
 data Vesting
@@ -113,6 +115,7 @@ grab = do
                 lookups = Constraints.unspentOutputs utxos  <>
                           Constraints.otherScript validator
                 tx :: TxConstraints Void Void
+                -- Spend the script output given by the reference, loop over all the reference look for the suitible eutxos and spend each of those. Cannot create tx with infinite validity interval, must make sure the tx is later than now (current time)
                 tx      = mconcat [Constraints.mustSpendScriptOutput oref unitRedeemer | oref <- orefs] <>
                           Constraints.mustValidateIn (from now)
             ledgerTx <- submitTxConstraintsWith @Void lookups tx
