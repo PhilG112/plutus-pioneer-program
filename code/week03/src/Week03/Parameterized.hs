@@ -2,7 +2,7 @@
 {-# LANGUAGE DeriveAnyClass        #-}
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE MultiParamTypeClasses #-} -- Enable type classes to have more than one type parameter
 {-# LANGUAGE NoImplicitPrelude     #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
@@ -73,10 +73,10 @@ validator :: VestingParam -> Validator
 validator = Scripts.validatorScript . typedValidator
 
 valHash :: VestingParam -> Ledger.ValidatorHash
-valHash = Scripts.validatorHash . typedValidator
+valHash p = Scripts.validatorHash $ typedValidator p
 
 scrAddress :: VestingParam -> Ledger.Address
-scrAddress = scriptAddress . validator
+scrAddress p = scriptAddress $ validator p
 
 data GiveParams = GiveParams
     { gpBeneficiary :: !PaymentPubKeyHash
