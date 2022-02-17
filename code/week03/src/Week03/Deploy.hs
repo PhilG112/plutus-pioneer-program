@@ -27,12 +27,15 @@ dataToScriptData (List xs)     = ScriptDataList $ dataToScriptData <$> xs
 dataToScriptData (I n)         = ScriptDataNumber n
 dataToScriptData (B bs)        = ScriptDataBytes bs
 
+-- Takes a file and some type of ToData and serializes that file to json
 writeJSON :: PlutusTx.ToData a => FilePath -> a -> IO ()
 writeJSON file = LBS.writeFile file . encode . scriptDataToJson ScriptDataJsonDetailedSchema . dataToScriptData . PlutusTx.toData
 
+-- Convert plutus validator to a script then write to a file
 writeValidator :: FilePath -> Ledger.Validator -> IO (Either (FileError ()) ())
 writeValidator file = writeFileTextEnvelope @(PlutusScript PlutusScriptV1) file Nothing . PlutusScriptSerialised . SBS.toShort . LBS.toStrict . serialise . Ledger.unValidatorScript
 
+-- Write the unit value to the unit.json
 writeUnit :: IO ()
 writeUnit = writeJSON "testnet/unit.json" ()
 
